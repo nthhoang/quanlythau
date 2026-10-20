@@ -1,0 +1,23 @@
+package com.quanlythau.backend.dto.nguoidung;
+
+import com.quanlythau.backend.entity.ChuyenMon;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.math.BigDecimal;
+
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class ThoResponse {
+    private Long id;
+    private String hoTen;
+    private String soDienThoai;
+    private ChuyenMon chuyenMon;
+    private BigDecimal donGiaCong;
+}

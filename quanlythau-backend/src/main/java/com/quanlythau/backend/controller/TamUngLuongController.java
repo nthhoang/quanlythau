@@ -1,0 +1,43 @@
+package com.quanlythau.backend.controller;
+
+import com.quanlythau.backend.dto.tamung.TamUngRequest;
+import com.quanlythau.backend.dto.tamung.TamUngResponse;
+import com.quanlythau.backend.service.TamUngLuongService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/tam-ung")
+@RequiredArgsConstructor
+@PreAuthorize("hasRole('CHU_THAU')")
+public class TamUngLuongController {
+
+    private final TamUngLuongService tamUngLuongService;
+
+    @PostMapping
+    public ResponseEntity<TamUngResponse> taoTamUng(@Valid @RequestBody TamUngRequest request) {
+        return ResponseEntity.ok(tamUngLuongService.taoTamUng(request));
+    }
+
+    @GetMapping("/tho/{nguoiDungId}")
+    public ResponseEntity<List<TamUngResponse>> layDanhSachTheoTho(@PathVariable Long nguoiDungId) {
+        return ResponseEntity.ok(tamUngLuongService.layDanhSachTheoTho(nguoiDungId));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> xoa(@PathVariable Long id) {
+        tamUngLuongService.xoa(id);
+        return ResponseEntity.noContent().build();
+    }
+}
