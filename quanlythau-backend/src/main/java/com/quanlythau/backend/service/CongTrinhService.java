@@ -76,10 +76,28 @@ public class CongTrinhService {
         return toResponse(congTrinh);
     }
 
+    @Transactional
     public void updateTrangThai(Long id, TrangThaiCongTrinh trangThai) {
-        CongTrinh congTrinh = findCongTrinhOrThrow(id);
+        if (trangThai == null) {
+            throw new BadRequestException("Trang thai cong trinh khong duoc de trong");
+        }
+        CongTrinh congTrinh = congTrinhRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Khong tim thay cong trinh voi id: " + id));
+        boolean tamDungMoi = trangThai == TrangThaiCongTrinh.TAM_DUNG
+                && congTrinh.getTrangThai() != TrangThaiCongTrinh.TAM_DUNG;
         congTrinh.setTrangThai(trangThai);
         congTrinhRepository.save(congTrinh);
+
+        if (tamDungMoi) {
+            phanCongRepository.findByCongTrinhIdAndNgayKetThucIsNull(id).forEach(phanCong ->
+                    thongBaoService.tao(
+                            phanCong.getNguoiDung(),
+                            LoaiThongBao.CONG_TRINH_TAM_DUNG,
+                            "Công trình tạm dừng",
+                            "Công trình \"" + congTrinh.getTenCongTrinh() + "\" bạn đang thi công đã được tạm dừng"
+                    )
+            );
+        }
     }
 
     public void updateTienDo(Long id, Integer tienDoPhanTram) {
@@ -96,13 +114,18 @@ public class CongTrinhService {
         congTrinhRepository.delete(congTrinh);
     }
 
+    @Transactional
     public PhanCongResponse ganTho(Long congTrinhId, PhanCongRequest request) {
-        CongTrinh congTrinh = findCongTrinhOrThrow(congTrinhId);
-        NguoiDung nguoiDung = nguoiDungRepository.findById(request.getNguoiDungId())
+        // Lock before other reads so concurrent assignments see the latest active assignment.
+        NguoiDung nguoiDung = nguoiDungRepository.findByIdForUpdate(request.getNguoiDungId())
                 .orElseThrow(() -> new ResourceNotFoundException("Khong tim thay tho voi id: " + request.getNguoiDungId()));
+        CongTrinh congTrinh = findCongTrinhOrThrow(congTrinhId);
 
         if (phanCongRepository.existsByCongTrinhIdAndNguoiDungIdAndNgayKetThucIsNull(congTrinhId, nguoiDung.getId())) {
             throw new BadRequestException("Tho nay da duoc phan cong vao cong trinh nay roi");
+        }
+        if (phanCongRepository.existsByNguoiDungIdAndNgayKetThucIsNull(nguoiDung.getId())) {
+            throw new BadRequestException("Tho nay dang duoc phan cong vao mot cong trinh khac");
         }
 
         PhanCongCongTrinh phanCong = PhanCongCongTrinh.builder()

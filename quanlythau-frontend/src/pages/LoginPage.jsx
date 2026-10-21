@@ -28,53 +28,59 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-concrete-50 px-4">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <h1 className="font-display font-extrabold text-2xl text-blueprint-900 tracking-tight">
-            QUẢN LÝ THẦU XÂY DỰNG
+    <div className="auth-page flex min-h-screen items-center justify-center px-4 py-10">
+      <div className="w-full max-w-md">
+        <div className="mb-7 text-center">
+          <span className="brand-mark mx-auto mb-4">Q</span>
+          <p className="mb-2 text-xs font-extrabold uppercase tracking-[0.2em] text-amber-600">Quản lý công trình</p>
+          <h1 className="font-display text-2xl font-extrabold tracking-tight text-blueprint-900">
+            Chào mừng trở lại
           </h1>
-          <p className="text-blueprint-900/50 text-sm mt-1">Đăng nhập để tiếp tục</p>
+          <p className="mt-2 text-sm text-slate-500">Đăng nhập để tiếp tục quản lý công việc của bạn.</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white border border-concrete-200 rounded-lg p-7 shadow-sm">
+        <form onSubmit={handleSubmit} className="auth-card space-y-1 rounded-2xl border border-concrete-200 bg-white p-6 shadow-xl shadow-blueprint-900/5 sm:p-8">
           {loi && (
-            <div className="mb-4 text-sm bg-red-50 text-red-700 border border-red-200 rounded px-3 py-2">{loi}</div>
+            <div className="mb-5 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">{loi}</div>
           )}
 
-          <label className="block text-sm font-medium text-blueprint-900 mb-1">Tên đăng nhập</label>
+          <label htmlFor="tenDangNhap" className="mb-1.5 block text-sm font-bold text-blueprint-900">Tên đăng nhập</label>
           <input
+            id="tenDangNhap"
             name="tenDangNhap"
             value={form.tenDangNhap}
             onChange={handleChange}
             required
-            className="w-full border border-concrete-200 rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-amber-500"
+            autoComplete="username"
+            className="mb-5 w-full rounded-lg border border-concrete-200 bg-slate-50/70 px-3.5 py-3 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
             placeholder="vd: bathau"
           />
 
-          <label className="block text-sm font-medium text-blueprint-900 mb-1">Mật khẩu</label>
+          <label htmlFor="matKhau" className="mb-1.5 block text-sm font-bold text-blueprint-900">Mật khẩu</label>
           <input
+            id="matKhau"
             type="password"
             name="matKhau"
             value={form.matKhau}
             onChange={handleChange}
             required
-            className="w-full border border-concrete-200 rounded px-3 py-2 mb-6 focus:outline-none focus:ring-2 focus:ring-amber-500"
+            autoComplete="current-password"
+            className="mb-7 w-full rounded-lg border border-concrete-200 bg-slate-50/70 px-3.5 py-3 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
             placeholder="••••••••"
           />
 
           <button
             type="submit"
             disabled={dangTai}
-            className="w-full bg-blueprint-900 hover:bg-blueprint-700 text-white font-semibold py-2.5 rounded transition-colors disabled:opacity-50"
+            className="w-full rounded-lg bg-blueprint-900 py-3 font-bold text-white shadow-md shadow-blueprint-900/15 transition-colors hover:bg-blueprint-700 disabled:opacity-50"
           >
             {dangTai ? 'Đang đăng nhập...' : 'Đăng nhập'}
           </button>
         </form>
 
-        <p className="text-center text-sm text-blueprint-900/60 mt-5">
+        <p className="mt-6 text-center text-sm text-slate-500">
           Chưa có tài khoản?{' '}
-          <Link to="/register" className="text-amber-600 font-semibold hover:underline">Đăng ký</Link>
+          <Link to="/register" className="font-bold text-blueprint-700 hover:text-amber-600">Đăng ký</Link>
         </p>
       </div>
     </div>

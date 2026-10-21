@@ -48,90 +48,93 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-concrete-50 px-4 py-10">
+    <div className="auth-page flex min-h-screen items-center justify-center px-4 py-10">
       <div className="w-full max-w-md">
-        <div className="text-center mb-6">
-          <h1 className="font-display font-extrabold text-2xl text-blueprint-900 tracking-tight">TẠO TÀI KHOẢN</h1>
+        <div className="mb-6 text-center">
+          <span className="brand-mark mx-auto mb-4">Q</span>
+          <p className="mb-2 text-xs font-extrabold uppercase tracking-[0.2em] text-amber-600">Bắt đầu ngay hôm nay</p>
+          <h1 className="font-display text-2xl font-extrabold tracking-tight text-blueprint-900">Tạo tài khoản</h1>
+          <p className="mt-2 text-sm text-slate-500">Thiết lập không gian quản lý công trình của bạn.</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white border border-concrete-200 rounded-lg p-7 shadow-sm space-y-4">
+        <form onSubmit={handleSubmit} className="auth-card space-y-4 rounded-2xl border border-concrete-200 bg-white p-5 shadow-xl shadow-blueprint-900/5 sm:p-7">
           {loi && (
-            <div className="text-sm bg-red-50 text-red-700 border border-red-200 rounded px-3 py-2">{loi}</div>
+            <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">{loi}</div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-blueprint-900 mb-1">Vai trò</label>
+            <label className="mb-1.5 block text-sm font-bold text-blueprint-900">Vai trò</label>
             <div className="grid grid-cols-2 gap-2">
               <button type="button" onClick={() => setForm({ ...form, vaiTro: 'CHU_THAU' })}
-                className={`py-2 rounded border text-sm font-semibold transition-colors ${form.vaiTro === 'CHU_THAU' ? 'bg-blueprint-900 text-white border-blueprint-900' : 'border-concrete-200 text-blueprint-900/70'}`}>
+                className={`rounded-lg border py-2.5 text-sm font-bold transition-colors ${form.vaiTro === 'CHU_THAU' ? 'border-blueprint-900 bg-blueprint-900 text-white shadow-sm' : 'border-concrete-200 text-blueprint-900/70 hover:bg-blueprint-100/50'}`}>
                 Chủ thầu
               </button>
               <button type="button" onClick={() => setForm({ ...form, vaiTro: 'THO' })}
-                className={`py-2 rounded border text-sm font-semibold transition-colors ${form.vaiTro === 'THO' ? 'bg-blueprint-900 text-white border-blueprint-900' : 'border-concrete-200 text-blueprint-900/70'}`}>
+                className={`rounded-lg border py-2.5 text-sm font-bold transition-colors ${form.vaiTro === 'THO' ? 'border-blueprint-900 bg-blueprint-900 text-white shadow-sm' : 'border-concrete-200 text-blueprint-900/70 hover:bg-blueprint-100/50'}`}>
                 Thợ
               </button>
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-blueprint-900 mb-1">Họ tên</label>
+            <label className="mb-1.5 block text-sm font-bold text-blueprint-900">Họ tên</label>
             <input name="hoTen" value={form.hoTen} onChange={handleChange} required
-              className="w-full border border-concrete-200 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500" />
+              className="w-full rounded-lg border border-concrete-200 bg-slate-50/70 px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500" />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <label className="block text-sm font-medium text-blueprint-900 mb-1">Tên đăng nhập</label>
+              <label className="mb-1.5 block text-sm font-bold text-blueprint-900">Tên đăng nhập</label>
               <input name="tenDangNhap" value={form.tenDangNhap} onChange={handleChange} required
-                className="w-full border border-concrete-200 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500" />
+                className="w-full rounded-lg border border-concrete-200 bg-slate-50/70 px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-blueprint-900 mb-1">Mật khẩu</label>
+              <label className="mb-1.5 block text-sm font-bold text-blueprint-900">Mật khẩu</label>
               <input type="password" name="matKhau" value={form.matKhau} onChange={handleChange} required
-                className="w-full border border-concrete-200 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500" />
+                className="w-full rounded-lg border border-concrete-200 bg-slate-50/70 px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500" />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <label className="block text-sm font-medium text-blueprint-900 mb-1">Số điện thoại</label>
+              <label className="mb-1.5 block text-sm font-bold text-blueprint-900">Số điện thoại</label>
               <input name="soDienThoai" value={form.soDienThoai} onChange={handleChange}
-                className="w-full border border-concrete-200 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500" />
+                className="w-full rounded-lg border border-concrete-200 bg-slate-50/70 px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-blueprint-900 mb-1">Email</label>
+              <label className="mb-1.5 block text-sm font-bold text-blueprint-900">Email</label>
               <input name="email" value={form.email} onChange={handleChange}
-                className="w-full border border-concrete-200 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500" />
+                className="w-full rounded-lg border border-concrete-200 bg-slate-50/70 px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500" />
             </div>
           </div>
 
           {form.vaiTro === 'THO' && (
-            <div className="grid grid-cols-2 gap-3 bg-blueprint-100/40 rounded p-3">
+            <div className="grid grid-cols-1 gap-3 rounded-xl border border-blueprint-100 bg-blueprint-100/35 p-3 sm:grid-cols-2">
               <div>
-                <label className="block text-sm font-medium text-blueprint-900 mb-1">Chuyên môn</label>
+                <label className="mb-1.5 block text-sm font-bold text-blueprint-900">Chuyên môn</label>
                 <select name="chuyenMon" value={form.chuyenMon} onChange={handleChange}
-                  className="w-full border border-concrete-200 rounded px-3 py-2 bg-white">
+                  className="w-full rounded-lg border border-concrete-200 bg-white px-3 py-2.5">
                   {CHUYEN_MON_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-blueprint-900 mb-1">Đơn giá công/ngày</label>
+                <label className="mb-1.5 block text-sm font-bold text-blueprint-900">Đơn giá công/ngày</label>
                 <input type="number" name="donGiaCong" value={form.donGiaCong} onChange={handleChange}
                   placeholder="VD: 350000"
-                  className="w-full border border-concrete-200 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500" />
+                  className="w-full rounded-lg border border-concrete-200 bg-white px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-amber-500" />
               </div>
             </div>
           )}
 
           <button type="submit" disabled={dangTai}
-            className="w-full bg-blueprint-900 hover:bg-blueprint-700 text-white font-semibold py-2.5 rounded transition-colors disabled:opacity-50">
+            className="w-full rounded-lg bg-blueprint-900 py-3 font-bold text-white shadow-md shadow-blueprint-900/15 transition-colors hover:bg-blueprint-700 disabled:opacity-50">
             {dangTai ? 'Đang tạo...' : 'Đăng ký'}
           </button>
         </form>
 
-        <p className="text-center text-sm text-blueprint-900/60 mt-5">
+        <p className="mt-6 text-center text-sm text-slate-500">
           Đã có tài khoản?{' '}
-          <Link to="/login" className="text-amber-600 font-semibold hover:underline">Đăng nhập</Link>
+          <Link to="/login" className="font-bold text-blueprint-700 hover:text-amber-600">Đăng nhập</Link>
         </p>
       </div>
     </div>

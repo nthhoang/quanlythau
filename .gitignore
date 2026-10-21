@@ -8,6 +8,7 @@ target/
 *.ear
 hs_err_pid*
 uploads/
+quanlythau-backend/src/test/
 
 # ==============================
 # Node.js / React / Vite

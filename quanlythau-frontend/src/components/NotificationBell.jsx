@@ -5,6 +5,7 @@ import { taoKetNoiThongBao } from '../utils/websocket';
 
 const LOAI_DIEU_HUONG = {
   PHAN_CONG_MOI: '/dashboard',
+  CONG_TRINH_TAM_DUNG: '/dashboard',
   CHAM_CONG_TU_CHOI: '/cong-cua-toi',
   CHAM_CONG_CAN_DUYET: '/quan-ly-cham-cong',
   LUONG_DA_CHOT: '/luong-cua-toi',

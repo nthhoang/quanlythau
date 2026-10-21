@@ -11,4 +11,5 @@ public interface PhanCongCongTrinhRepository extends JpaRepository<PhanCongCongT
     List<PhanCongCongTrinh> findByNguoiDungId(Long nguoiDungId);
     List<PhanCongCongTrinh> findByNguoiDungIdAndNgayKetThucIsNull(Long nguoiDungId);
     boolean existsByCongTrinhIdAndNguoiDungIdAndNgayKetThucIsNull(Long congTrinhId, Long nguoiDungId);
+    boolean existsByNguoiDungIdAndNgayKetThucIsNull(Long nguoiDungId);
 }
