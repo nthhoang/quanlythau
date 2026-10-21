@@ -7,6 +7,7 @@ target/
 *.war
 *.ear
 hs_err_pid*
+upload/
 
 # ==============================
 # Node.js / React / Vite
@@ -70,3 +71,5 @@ desktop.ini
 # Local-only Spring configuration
 application-local.yml
 application-local.yaml
+
+
