@@ -7,7 +7,7 @@ target/
 *.war
 *.ear
 hs_err_pid*
-upload/
+uploads/
 
 # ==============================
 # Node.js / React / Vite
