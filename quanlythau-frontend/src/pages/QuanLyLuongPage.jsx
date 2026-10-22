@@ -37,7 +37,7 @@ export default function QuanLyLuongPage() {
       setPhanTramTangCa(res.data.phanTramTangCa);
       setNguongCanhBaoChiPhi(res.data.nguongCanhBaoChiPhi);
     }).catch(() => {});
-    axiosClient.get('/nguoi-dung/tho').then((res) => setDanhSachTho(res.data)).catch(() => setLoi('Không tải được danh sách thợ'));
+    axiosClient.get('/nguoi-dung/tho/doi-ngu').then((res) => setDanhSachTho(res.data)).catch(() => setLoi('Không tải được danh sách thợ trong đội'));
   }, []);
 
   useEffect(() => {
@@ -72,7 +72,7 @@ export default function QuanLyLuongPage() {
     try {
       const res = await axiosClient.patch(`/nguoi-dung/${thoDangChonId}/don-gia-cong`, { donGiaCong: Number(donGiaMoi) });
       setDanhSachTho((ds) => ds.map((t) => (t.id === res.data.id ? res.data : t)));
-      setThongBao(`Đã cập nhật đơn giá công cho ${thoDangChon.hoTen}. Chỉ áp dụng cho các lượt chấm công từ giờ trở đi.`);
+      setThongBao(`Đã cập nhật đơn giá công cho ${thoDangChon.hoTen}. Đơn giá mới áp dụng cho các lượt chấm công tiếp theo; dữ liệu đã ghi nhận không thay đổi.`);
     } catch (err) { setLoi(err.response?.data?.message || 'Sửa đơn giá công thất bại'); }
     finally { setDangLuuDonGia(false); }
   };

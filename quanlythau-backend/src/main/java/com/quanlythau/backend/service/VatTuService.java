@@ -31,15 +31,15 @@ public class VatTuService {
     private final FileStorageService fileStorageService;
     private final GeminiService geminiService;
 
-    public VatTuResponse create(Long congTrinhId, VatTuRequest request) {
-        CongTrinh congTrinh = timCongTrinh(congTrinhId);
+    public VatTuResponse create(Long congTrinhId, VatTuRequest request, Long chuThauId) {
+        CongTrinh congTrinh = timCongTrinhCuaChuThau(congTrinhId, chuThauId);
         VatTu vatTu = tuRequest(request, congTrinh);
         vatTuRepository.save(vatTu);
         return toResponse(vatTu);
     }
 
-    public List<VatTuResponse> createBatch(VatTuBatchRequest request) {
-        CongTrinh congTrinh = timCongTrinh(request.getCongTrinhId());
+    public List<VatTuResponse> createBatch(VatTuBatchRequest request, Long chuThauId) {
+        CongTrinh congTrinh = timCongTrinhCuaChuThau(request.getCongTrinhId(), chuThauId);
         return request.getDanhSach().stream()
                 .map(dong -> {
                     if (dong.getAnhHoaDon() == null) {
@@ -53,22 +53,24 @@ public class VatTuService {
     }
 
     @Transactional(readOnly = true)
-    public List<VatTuResponse> layDanhSachTheoCongTrinh(Long congTrinhId) {
+    public List<VatTuResponse> layDanhSachTheoCongTrinh(Long congTrinhId, Long chuThauId) {
+        timCongTrinhCuaChuThau(congTrinhId, chuThauId);
         return vatTuRepository.findByCongTrinhId(congTrinhId).stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
-    public BigDecimal tinhTongChiPhi(Long congTrinhId) {
+    public BigDecimal tinhTongChiPhi(Long congTrinhId, Long chuThauId) {
+        timCongTrinhCuaChuThau(congTrinhId, chuThauId);
         return vatTuRepository.findByCongTrinhId(congTrinhId).stream()
                 .map(VatTu::getThanhTien)
                 .filter(t -> t != null)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    public VatTuResponse update(Long id, VatTuRequest request) {
-        VatTu vatTu = timVatTu(id);
+    public VatTuResponse update(Long id, VatTuRequest request, Long chuThauId) {
+        VatTu vatTu = timVatTuCuaChuThau(id, chuThauId);
         vatTu.setTenVatTu(request.getTenVatTu());
         vatTu.setSoLuong(request.getSoLuong());
         vatTu.setDonVi(request.getDonVi());
@@ -81,15 +83,12 @@ public class VatTuService {
         return toResponse(vatTu);
     }
 
-    public void xoa(Long id) {
-        if (!vatTuRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Không tìm thấy vật tư");
-        }
-        vatTuRepository.deleteById(id);
+    public void xoa(Long id, Long chuThauId) {
+        vatTuRepository.delete(timVatTuCuaChuThau(id, chuThauId));
     }
 
-    public VatTuResponse dieuChuyen(Long id, DieuChuyenRequest request) {
-        VatTu goc = timVatTu(id);
+    public VatTuResponse dieuChuyen(Long id, DieuChuyenRequest request, Long chuThauId) {
+        VatTu goc = timVatTuCuaChuThau(id, chuThauId);
 
         if (request.getSoLuong().compareTo(goc.getSoLuong()) > 0) {
             throw new BadRequestException("Số lượng chuyển không được vượt quá số lượng hiện có (" + goc.getSoLuong() + ")");
@@ -98,7 +97,7 @@ public class VatTuService {
             throw new BadRequestException("Công trình đích phải khác công trình hiện tại");
         }
 
-        CongTrinh congTrinhDich = timCongTrinh(request.getCongTrinhDichId());
+        CongTrinh congTrinhDich = timCongTrinhCuaChuThau(request.getCongTrinhDichId(), chuThauId);
 
         BigDecimal soLuongConLai = goc.getSoLuong().subtract(request.getSoLuong());
         goc.setSoLuong(soLuongConLai);
@@ -153,13 +152,13 @@ public class VatTuService {
         return soLuong.multiply(donGia);
     }
 
-    private CongTrinh timCongTrinh(Long id) {
-        return congTrinhRepository.findById(id)
+    private CongTrinh timCongTrinhCuaChuThau(Long id, Long chuThauId) {
+        return congTrinhRepository.findByIdAndNguoiTaoId(id, chuThauId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy công trình"));
     }
 
-    private VatTu timVatTu(Long id) {
-        return vatTuRepository.findById(id)
+    private VatTu timVatTuCuaChuThau(Long id, Long chuThauId) {
+        return vatTuRepository.findByIdAndContractorId(id, chuThauId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy vật tư"));
     }
 

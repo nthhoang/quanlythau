@@ -35,41 +35,43 @@ public class LuongController {
     public ResponseEntity<LuongPreviewResponse> xemTruoc(
             @RequestParam Long nguoiDungId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate tuNgay,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate denNgay
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate denNgay,
+            @AuthenticationPrincipal NguoiDung chuThau
     ) {
-        return ResponseEntity.ok(luongService.tinhLuong(nguoiDungId, tuNgay, denNgay));
+        return ResponseEntity.ok(luongService.tinhLuong(nguoiDungId, tuNgay, denNgay, chuThau.getId()));
     }
 
     @GetMapping("/xem-truoc-tat-ca")
     @PreAuthorize("hasRole('CHU_THAU')")
     public ResponseEntity<List<LuongPreviewResponse>> xemTruocTatCa(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate tuNgay,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate denNgay
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate denNgay,
+            @AuthenticationPrincipal NguoiDung chuThau
     ) {
-        return ResponseEntity.ok(luongService.tinhLuongTatCa(tuNgay, denNgay));
+        return ResponseEntity.ok(luongService.tinhLuongTatCa(tuNgay, denNgay, chuThau.getId()));
     }
 
     @PostMapping("/chot")
     @PreAuthorize("hasRole('CHU_THAU')")
-    public ResponseEntity<BangLuongResponse> chotLuong(@Valid @RequestBody LuongRequest request) {
-        return ResponseEntity.ok(luongService.chotLuong(request.getNguoiDungId(), request.getTuNgay(), request.getDenNgay()));
+    public ResponseEntity<BangLuongResponse> chotLuong(@Valid @RequestBody LuongRequest request, @AuthenticationPrincipal NguoiDung chuThau) {
+        return ResponseEntity.ok(luongService.chotLuong(request.getNguoiDungId(), request.getTuNgay(), request.getDenNgay(), chuThau.getId()));
     }
 
     @GetMapping("/lich-su/{nguoiDungId}")
     @PreAuthorize("hasRole('CHU_THAU')")
-    public ResponseEntity<List<BangLuongResponse>> lichSuTheoTho(@PathVariable Long nguoiDungId) {
-        return ResponseEntity.ok(luongService.layLichSu(nguoiDungId));
+    public ResponseEntity<List<BangLuongResponse>> lichSuTheoTho(@PathVariable Long nguoiDungId, @AuthenticationPrincipal NguoiDung chuThau) {
+        return ResponseEntity.ok(luongService.layLichSu(nguoiDungId, chuThau.getId()));
     }
 
     @GetMapping("/cua-toi")
     @PreAuthorize("hasRole('THO')")
     public ResponseEntity<List<BangLuongResponse>> luongCuaToi(@AuthenticationPrincipal NguoiDung nguoiDung) {
-        return ResponseEntity.ok(luongService.layLichSu(nguoiDung.getId()));
+        return ResponseEntity.ok(luongService.layLichSuCuaTho(nguoiDung.getId()));
     }
 
     @PatchMapping("/{id}/da-thanh-toan")
     @PreAuthorize("hasRole('CHU_THAU')")
-    public ResponseEntity<BangLuongResponse> danhDauDaThanhToan(@PathVariable Long id) {
-        return ResponseEntity.ok(luongService.danhDauDaThanhToan(id));
+    public ResponseEntity<BangLuongResponse> danhDauDaThanhToan(@PathVariable Long id, @AuthenticationPrincipal NguoiDung chuThau) {
+        return ResponseEntity.ok(luongService.danhDauDaThanhToan(id, chuThau.getId()));
     }
 }

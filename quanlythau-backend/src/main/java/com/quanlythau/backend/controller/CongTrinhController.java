@@ -27,7 +27,7 @@ public class CongTrinhController {
 
     @GetMapping
     public ResponseEntity<List<CongTrinhResponse>> getAll(@AuthenticationPrincipal NguoiDung nguoiDung) {
-        List<CongTrinhResponse> danhSach = congTrinhService.getAll();
+        List<CongTrinhResponse> danhSach = congTrinhService.getAll(nguoiDung.getId(), nguoiDung.getVaiTro());
         if (nguoiDung.getVaiTro() == VaiTro.THO) {
             danhSach.forEach(c -> c.setGiaTriHopDong(null));
         }
@@ -36,7 +36,7 @@ public class CongTrinhController {
 
     @GetMapping("/{id}")
     public ResponseEntity<CongTrinhResponse> getById(@PathVariable Long id, @AuthenticationPrincipal NguoiDung nguoiDung) {
-        CongTrinhResponse congTrinh = congTrinhService.getById(id);
+        CongTrinhResponse congTrinh = congTrinhService.getById(id, nguoiDung);
         if (nguoiDung.getVaiTro() == VaiTro.THO) {
             congTrinh.setGiaTriHopDong(null);
         }
@@ -54,40 +54,43 @@ public class CongTrinhController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('CHU_THAU')")
-    public ResponseEntity<CongTrinhResponse> update(@PathVariable Long id, @Valid @RequestBody CongTrinhRequest request) {
-        return ResponseEntity.ok(congTrinhService.update(id, request));
+    public ResponseEntity<CongTrinhResponse> update(@PathVariable Long id, @Valid @RequestBody CongTrinhRequest request, @AuthenticationPrincipal NguoiDung chuThau) {
+        return ResponseEntity.ok(congTrinhService.update(id, request, chuThau.getId()));
     }
 
     @PatchMapping("/{id}/trang-thai")
     @PreAuthorize("hasRole('CHU_THAU')")
-    public ResponseEntity<Void> updateTrangThai(@PathVariable Long id, @RequestBody Map<String, TrangThaiCongTrinh> body) {
-        congTrinhService.updateTrangThai(id, body.get("trangThai"));
+    public ResponseEntity<Void> updateTrangThai(@PathVariable Long id, @RequestBody Map<String, TrangThaiCongTrinh> body, @AuthenticationPrincipal NguoiDung chuThau) {
+        congTrinhService.updateTrangThai(id, body.get("trangThai"), chuThau.getId());
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{id}/tien-do")
     @PreAuthorize("hasRole('CHU_THAU')")
-    public ResponseEntity<Void> updateTienDo(@PathVariable Long id, @RequestBody Map<String, Integer> body) {
-        congTrinhService.updateTienDo(id, body.get("tienDoPhanTram"));
+    public ResponseEntity<Void> updateTienDo(@PathVariable Long id, @RequestBody Map<String, Integer> body, @AuthenticationPrincipal NguoiDung chuThau) {
+        congTrinhService.updateTienDo(id, body.get("tienDoPhanTram"), chuThau.getId());
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('CHU_THAU')")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        congTrinhService.delete(id);
+    public ResponseEntity<Void> delete(@PathVariable Long id, @AuthenticationPrincipal NguoiDung chuThau) {
+        congTrinhService.delete(id, chuThau.getId());
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{id}/phan-cong")
     @PreAuthorize("hasRole('CHU_THAU')")
-    public ResponseEntity<PhanCongResponse> ganTho(@PathVariable Long id, @Valid @RequestBody PhanCongRequest request) {
-        return ResponseEntity.ok(congTrinhService.ganTho(id, request));
+    public ResponseEntity<PhanCongResponse> ganTho(@PathVariable Long id, @Valid @RequestBody PhanCongRequest request, @AuthenticationPrincipal NguoiDung chuThau) {
+        return ResponseEntity.ok(congTrinhService.ganTho(id, request, chuThau.getId()));
     }
 
     @GetMapping("/{id}/tho")
-    public ResponseEntity<List<PhanCongResponse>> getDanhSachTho(@PathVariable Long id) {
-        return ResponseEntity.ok(congTrinhService.getDanhSachTho(id));
+    public ResponseEntity<List<PhanCongResponse>> getDanhSachTho(@PathVariable Long id, @AuthenticationPrincipal NguoiDung nguoiDung) {
+        if (nguoiDung.getVaiTro() == VaiTro.CHU_THAU) {
+            return ResponseEntity.ok(congTrinhService.getDanhSachTho(id, nguoiDung.getId()));
+        }
+        return ResponseEntity.ok(congTrinhService.getDanhSachThoCuaTho(id, nguoiDung.getId()));
     }
 
     @GetMapping("/cua-toi")
@@ -97,8 +100,8 @@ public class CongTrinhController {
 
     @DeleteMapping("/{id}/phan-cong/{phanCongId}")
     @PreAuthorize("hasRole('CHU_THAU')")
-    public ResponseEntity<Void> goPhanCong(@PathVariable Long id, @PathVariable Long phanCongId) {
-        congTrinhService.goPhanCong(id, phanCongId);
+    public ResponseEntity<Void> goPhanCong(@PathVariable Long id, @PathVariable Long phanCongId, @AuthenticationPrincipal NguoiDung chuThau) {
+        congTrinhService.goPhanCong(id, phanCongId, chuThau.getId());
         return ResponseEntity.noContent().build();
     }
 }

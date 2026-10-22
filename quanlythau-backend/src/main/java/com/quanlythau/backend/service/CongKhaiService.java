@@ -33,7 +33,7 @@ public class CongKhaiService {
                 .ngayBatDau(congTrinh.getNgayBatDau())
                 .ngayDuKienHoanThanh(congTrinh.getNgayDuKienHoanThanh())
                 .tienDoPhanTram(congTrinh.getTienDoPhanTram())
-                .nhatKyThiCong(nhatKyThiCongService.layDanhSachTheoCongTrinh(congTrinh.getId()))
+                .nhatKyThiCong(nhatKyThiCongService.layDanhSachCongKhai(congTrinh.getId()))
                 .build();
     }
 }

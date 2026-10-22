@@ -62,6 +62,9 @@ public class NguoiDung implements UserDetails {
     @Column(name = "don_gia_cong", precision = 15, scale = 0)
     private BigDecimal donGiaCong;
 
+    @Column(name = "chu_thau_id")
+    private Long chuThauId;
+
     @Column(name = "anh_dai_dien", length = 500)
     private String anhDaiDien;
 

@@ -1,9 +1,7 @@
 package com.quanlythau.backend.service;
 
 import com.quanlythau.backend.dto.laillo.LaiLoResponse;
-import com.quanlythau.backend.entity.NguoiDung;
-import com.quanlythau.backend.entity.VaiTro;
-import com.quanlythau.backend.repository.NguoiDungRepository;
+import com.quanlythau.backend.dto.nguoidung.ThoResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,7 +20,7 @@ public class TroLyAiService {
 
     private final GeminiService geminiService;
     private final LaiLoService laiLoService;
-    private final NguoiDungRepository nguoiDungRepository;
+    private final NguoiDungService nguoiDungService;
 
     private static final String HUONG_DAN_HE_THONG = """
             Bạn là trợ lý ảo cho chủ thầu xây dựng tư nhân. Trả lời câu hỏi \
@@ -33,16 +31,16 @@ public class TroLyAiService {
             thay vì đoán.""";
 
     @Transactional(readOnly = true)
-    public String hoiDap(String cauHoi) {
-        String nguCanh = HUONG_DAN_HE_THONG + "\n\n" + xayDungNguCanh();
+    public String hoiDap(String cauHoi, Long chuThauId) {
+        String nguCanh = HUONG_DAN_HE_THONG + "\n\n" + xayDungNguCanh(chuThauId);
         return geminiService.hoiDap(nguCanh, cauHoi);
     }
 
-    private String xayDungNguCanh() {
+    private String xayDungNguCanh(Long chuThauId) {
         StringBuilder sb = new StringBuilder();
 
         sb.append("DANH SÁCH CÔNG TRÌNH VÀ TÌNH HÌNH CHI PHÍ / LÃI LỖ:\n");
-        List<LaiLoResponse> danhSachLaiLo = laiLoService.tinhLaiLoTatCa();
+        List<LaiLoResponse> danhSachLaiLo = laiLoService.tinhLaiLoTatCa(chuThauId);
         if (danhSachLaiLo.isEmpty()) {
             sb.append("(chưa có công trình nào)\n");
         }
@@ -62,11 +60,11 @@ public class TroLyAiService {
         }
 
         sb.append("\nDANH SÁCH THỢ:\n");
-        List<NguoiDung> danhSachTho = nguoiDungRepository.findByVaiTro(VaiTro.THO);
+        List<ThoResponse> danhSachTho = nguoiDungService.getDoiNgu(chuThauId);
         if (danhSachTho.isEmpty()) {
             sb.append("(chưa có thợ nào)\n");
         }
-        for (NguoiDung tho : danhSachTho) {
+        for (ThoResponse tho : danhSachTho) {
             sb.append("- ").append(tho.getHoTen())
                     .append(" | chuyên môn: ").append(tho.getChuyenMon())
                     .append(" | đơn giá công/ngày: ").append(tho.getDonGiaCong())

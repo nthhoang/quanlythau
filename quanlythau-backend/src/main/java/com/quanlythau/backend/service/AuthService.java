@@ -4,6 +4,7 @@ import com.quanlythau.backend.dto.auth.AuthResponse;
 import com.quanlythau.backend.dto.auth.LoginRequest;
 import com.quanlythau.backend.dto.auth.RegisterRequest;
 import com.quanlythau.backend.entity.NguoiDung;
+import com.quanlythau.backend.entity.VaiTro;
 import com.quanlythau.backend.exception.BadRequestException;
 import com.quanlythau.backend.repository.NguoiDungRepository;
 import com.quanlythau.backend.security.JwtService;
@@ -23,6 +24,9 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
 
     public AuthResponse register(RegisterRequest request) {
+        if (request.getVaiTro() != VaiTro.CHU_THAU) {
+            throw new BadRequestException("Tài khoản thợ được tạo và cấp bởi chủ thầu");
+        }
         if (nguoiDungRepository.existsByTenDangNhap(request.getTenDangNhap())) {
             throw new BadRequestException("Ten dang nhap da ton tai");
         }

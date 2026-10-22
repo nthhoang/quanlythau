@@ -20,13 +20,16 @@ public class TamUngLuongService {
 
     private final TamUngLuongRepository tamUngRepository;
     private final NguoiDungRepository nguoiDungRepository;
+    private final NguoiDungService nguoiDungService;
 
-    public TamUngResponse taoTamUng(TamUngRequest request) {
+    public TamUngResponse taoTamUng(TamUngRequest request, Long chuThauId) {
+        nguoiDungService.kiemTraDangLamViec(chuThauId, request.getNguoiDungId());
         NguoiDung tho = nguoiDungRepository.findById(request.getNguoiDungId())
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thợ"));
 
         TamUngLuong tamUng = TamUngLuong.builder()
                 .nguoiDung(tho)
+                .chuThauId(chuThauId)
                 .soTien(request.getSoTien())
                 .ngayUng(request.getNgayUng())
                 .ghiChu(request.getGhiChu())
@@ -37,17 +40,16 @@ public class TamUngLuongService {
     }
 
     @Transactional(readOnly = true)
-    public List<TamUngResponse> layDanhSachTheoTho(Long nguoiDungId) {
-        return tamUngRepository.findByNguoiDungIdOrderByNgayUngDesc(nguoiDungId).stream()
+    public List<TamUngResponse> layDanhSachTheoTho(Long nguoiDungId, Long chuThauId) {
+        nguoiDungService.kiemTraThuocDoiNgu(chuThauId, nguoiDungId);
+        return tamUngRepository.findByNguoiDungIdAndChuThauIdOrderByNgayUngDesc(nguoiDungId, chuThauId).stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
-    public void xoa(Long id) {
-        if (!tamUngRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Không tìm thấy khoản tạm ứng");
-        }
-        tamUngRepository.deleteById(id);
+    public void xoa(Long id, Long chuThauId) {
+        tamUngRepository.delete(tamUngRepository.findByIdAndChuThauId(id, chuThauId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy khoản tạm ứng")));
     }
 
     private TamUngResponse toResponse(TamUngLuong t) {

@@ -15,6 +15,7 @@ import ThongKePage from './pages/ThongKePage';
 import TroLyAiPage from './pages/TroLyAiPage';
 import NhatKyThiCongPage from './pages/NhatKyThiCongPage';
 import XemTienDoCongKhaiPage from './pages/XemTienDoCongKhaiPage';
+import QuanLyThoPage from './pages/QuanLyThoPage';
 
 export default function App() {
   return (
@@ -25,15 +26,16 @@ export default function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/xem-tien-do/:shareToken" element={<XemTienDoCongKhaiPage />} />
           <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-          <Route path="/cham-cong" element={<ProtectedRoute><ChamCongPage /></ProtectedRoute>} />
-          <Route path="/quan-ly-cham-cong" element={<ProtectedRoute><QuanLyChamCongPage /></ProtectedRoute>} />
-          <Route path="/cong-cua-toi" element={<ProtectedRoute><LichSuChamCongPage /></ProtectedRoute>} />
-          <Route path="/quan-ly-luong" element={<ProtectedRoute><QuanLyLuongPage /></ProtectedRoute>} />
-          <Route path="/luong-cua-toi" element={<ProtectedRoute><LuongCuaToiPage /></ProtectedRoute>} />
-          <Route path="/quan-ly-vat-tu" element={<ProtectedRoute><QuanLyVatTuPage /></ProtectedRoute>} />
-          <Route path="/chi-phi-lai-lo" element={<ProtectedRoute><QuanLyLaiLoPage /></ProtectedRoute>} />
-          <Route path="/thong-ke" element={<ProtectedRoute><ThongKePage /></ProtectedRoute>} />
-          <Route path="/tro-ly-ai" element={<ProtectedRoute><TroLyAiPage /></ProtectedRoute>} />
+          <Route path="/cham-cong" element={<ProtectedRoute requiredRole="CHU_THAU"><ChamCongPage /></ProtectedRoute>} />
+          <Route path="/quan-ly-cham-cong" element={<ProtectedRoute requiredRole="CHU_THAU"><QuanLyChamCongPage /></ProtectedRoute>} />
+          <Route path="/cong-cua-toi" element={<ProtectedRoute requiredRole="THO"><LichSuChamCongPage /></ProtectedRoute>} />
+          <Route path="/quan-ly-luong" element={<ProtectedRoute requiredRole="CHU_THAU"><QuanLyLuongPage /></ProtectedRoute>} />
+          <Route path="/quan-ly-tho" element={<ProtectedRoute requiredRole="CHU_THAU"><QuanLyThoPage /></ProtectedRoute>} />
+          <Route path="/luong-cua-toi" element={<ProtectedRoute requiredRole="THO"><LuongCuaToiPage /></ProtectedRoute>} />
+          <Route path="/quan-ly-vat-tu" element={<ProtectedRoute requiredRole="CHU_THAU"><QuanLyVatTuPage /></ProtectedRoute>} />
+          <Route path="/chi-phi-lai-lo" element={<ProtectedRoute requiredRole="CHU_THAU"><QuanLyLaiLoPage /></ProtectedRoute>} />
+          <Route path="/thong-ke" element={<ProtectedRoute requiredRole="CHU_THAU"><ThongKePage /></ProtectedRoute>} />
+          <Route path="/tro-ly-ai" element={<ProtectedRoute requiredRole="CHU_THAU"><TroLyAiPage /></ProtectedRoute>} />
           <Route path="/nhat-ky-thi-cong" element={<ProtectedRoute><NhatKyThiCongPage /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>

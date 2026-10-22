@@ -45,17 +45,19 @@ public class LuongService {
     private final NguoiDungRepository nguoiDungRepository;
     private final BangLuongRepository bangLuongRepository;
     private final ThongBaoService thongBaoService;
+    private final NguoiDungService nguoiDungService;
 
     @Transactional(readOnly = true)
-    public LuongPreviewResponse tinhLuong(Long nguoiDungId, LocalDate tuNgay, LocalDate denNgay) {
+    public LuongPreviewResponse tinhLuong(Long nguoiDungId, LocalDate tuNgay, LocalDate denNgay, Long chuThauId) {
         if (denNgay.isBefore(tuNgay)) {
             throw new BadRequestException("Ngày kết thúc phải sau ngày bắt đầu");
         }
 
+        nguoiDungService.kiemTraThuocDoiNgu(chuThauId, nguoiDungId);
         NguoiDung tho = nguoiDungRepository.findById(nguoiDungId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thợ"));
 
-        List<ChamCong> tatCa = chamCongRepository.findByNguoiDungIdAndNgayChamCongBetween(nguoiDungId, tuNgay, denNgay);
+        List<ChamCong> tatCa = chamCongRepository.findByWorkerAndContractorAndDateRange(nguoiDungId, chuThauId, tuNgay, denNgay);
 
         List<ChamCong> hopLe = tatCa.stream()
                 .filter(c -> c.getTrangThaiXacThuc() == TrangThaiXacThuc.TU_DONG_XAC_NHAN
@@ -76,7 +78,9 @@ public class LuongService {
 
         BigDecimal tongTienCong = tienCoBan.add(tienTangCa);
 
-        List<TamUngLuong> tamUngs = tamUngRepository.findByNguoiDungIdAndNgayUngBetween(nguoiDungId, tuNgay, denNgay);
+        List<TamUngLuong> tamUngs = tamUngRepository.findByNguoiDungIdAndChuThauIdAndNgayUngBetween(
+                nguoiDungId, chuThauId, tuNgay, denNgay
+        );
         BigDecimal tongTamUng = tamUngs.stream()
                 .map(TamUngLuong::getSoTien)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -101,26 +105,27 @@ public class LuongService {
     }
 
     @Transactional(readOnly = true)
-    public List<LuongPreviewResponse> tinhLuongTatCa(LocalDate tuNgay, LocalDate denNgay) {
-        return nguoiDungRepository.findByVaiTro(VaiTro.THO).stream()
-                .map(tho -> tinhLuong(tho.getId(), tuNgay, denNgay))
+    public List<LuongPreviewResponse> tinhLuongTatCa(LocalDate tuNgay, LocalDate denNgay, Long chuThauId) {
+        return nguoiDungService.getDoiNgu(chuThauId).stream()
+                .map(tho -> tinhLuong(tho.getId(), tuNgay, denNgay, chuThauId))
                 .collect(Collectors.toList());
     }
 
     /** Chot luong: tinh lai roi luu thanh 1 BangLuong co dinh. Chan neu ky nay chong lan voi ky da chot truoc do. */
-    public BangLuongResponse chotLuong(Long nguoiDungId, LocalDate tuNgay, LocalDate denNgay) {
-        boolean chongLan = bangLuongRepository.findByNguoiDungId(nguoiDungId).stream()
+    public BangLuongResponse chotLuong(Long nguoiDungId, LocalDate tuNgay, LocalDate denNgay, Long chuThauId) {
+        boolean chongLan = bangLuongRepository.findByNguoiDungIdAndChuThauId(nguoiDungId, chuThauId).stream()
                 .anyMatch(b -> !tuNgay.isAfter(b.getDenNgay()) && !b.getTuNgay().isAfter(denNgay));
         if (chongLan) {
             throw new BadRequestException("Khoảng thời gian này trùng với một kỳ lương đã chốt trước đó");
         }
 
-        LuongPreviewResponse xemTruoc = tinhLuong(nguoiDungId, tuNgay, denNgay);
+        LuongPreviewResponse xemTruoc = tinhLuong(nguoiDungId, tuNgay, denNgay, chuThauId);
         NguoiDung tho = nguoiDungRepository.findById(nguoiDungId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thợ"));
 
         BangLuong bangLuong = BangLuong.builder()
                 .nguoiDung(tho)
+                .chuThauId(chuThauId)
                 .tuNgay(tuNgay)
                 .denNgay(denNgay)
                 .tongCong(xemTruoc.getTongCong())
@@ -145,14 +150,20 @@ public class LuongService {
     }
 
     @Transactional(readOnly = true)
-    public List<BangLuongResponse> layLichSu(Long nguoiDungId) {
+    public List<BangLuongResponse> layLichSu(Long nguoiDungId, Long chuThauId) {
+        return bangLuongRepository.findByNguoiDungIdAndChuThauIdOrderByTuNgayDesc(nguoiDungId, chuThauId).stream()
+                .map(this::toBangLuongResponse)
+                .collect(Collectors.toList());
+    }
+
+    public List<BangLuongResponse> layLichSuCuaTho(Long nguoiDungId) {
         return bangLuongRepository.findByNguoiDungIdOrderByTuNgayDesc(nguoiDungId).stream()
                 .map(this::toBangLuongResponse)
                 .collect(Collectors.toList());
     }
 
-    public BangLuongResponse danhDauDaThanhToan(Long id) {
-        BangLuong bangLuong = bangLuongRepository.findById(id)
+    public BangLuongResponse danhDauDaThanhToan(Long id, Long chuThauId) {
+        BangLuong bangLuong = bangLuongRepository.findByIdAndChuThauId(id, chuThauId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy bảng lương"));
         bangLuong.setTrangThai("DA_THANH_TOAN");
         bangLuongRepository.save(bangLuong);

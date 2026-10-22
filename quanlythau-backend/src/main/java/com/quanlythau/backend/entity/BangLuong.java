@@ -37,6 +37,9 @@ public class BangLuong {
     @JoinColumn(name = "nguoi_dung_id", nullable = false)
     private NguoiDung nguoiDung;
 
+    @Column(name = "chu_thau_id")
+    private Long chuThauId;
+
     @Column(name = "tu_ngay", nullable = false)
     private LocalDate tuNgay;
 

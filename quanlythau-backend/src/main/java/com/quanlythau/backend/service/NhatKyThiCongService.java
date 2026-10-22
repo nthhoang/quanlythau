@@ -6,10 +6,13 @@ import com.quanlythau.backend.dto.nhatky.NhatKyThiCongRequest;
 import com.quanlythau.backend.dto.nhatky.NhatKyThiCongResponse;
 import com.quanlythau.backend.entity.CongTrinh;
 import com.quanlythau.backend.entity.NhatKyThiCong;
+import com.quanlythau.backend.entity.NguoiDung;
+import com.quanlythau.backend.entity.VaiTro;
 import com.quanlythau.backend.exception.BadRequestException;
 import com.quanlythau.backend.exception.ResourceNotFoundException;
 import com.quanlythau.backend.repository.CongTrinhRepository;
 import com.quanlythau.backend.repository.NhatKyThiCongRepository;
+import com.quanlythau.backend.repository.PhanCongCongTrinhRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,16 +34,18 @@ public class NhatKyThiCongService {
 
     private final NhatKyThiCongRepository nhatKyThiCongRepository;
     private final CongTrinhRepository congTrinhRepository;
+    private final PhanCongCongTrinhRepository phanCongRepository;
     private final ObjectMapper objectMapper;
 
-    public NhatKyThiCongResponse create(Long congTrinhId, NhatKyThiCongRequest request) {
-        CongTrinh congTrinh = timCongTrinh(congTrinhId);
+    public NhatKyThiCongResponse create(Long congTrinhId, NhatKyThiCongRequest request, Long chuThauId) {
+        CongTrinh congTrinh = timCongTrinhCuaChuThau(congTrinhId, chuThauId);
 
         NhatKyThiCong nhatKy = NhatKyThiCong.builder()
                 .congTrinh(congTrinh)
                 .ngay(request.getNgay() != null ? request.getNgay() : LocalDate.now())
                 .noiDung(request.getNoiDung())
                 .danhSachAnh(ghiDanhSachAnh(request.getDanhSachAnh()))
+                .nguoiTaoId(chuThauId)
                 .build();
 
         nhatKyThiCongRepository.save(nhatKy);
@@ -48,14 +53,30 @@ public class NhatKyThiCongService {
     }
 
     @Transactional(readOnly = true)
-    public List<NhatKyThiCongResponse> layDanhSachTheoCongTrinh(Long congTrinhId) {
+    public List<NhatKyThiCongResponse> layDanhSachCongKhai(Long congTrinhId) {
+        return nhatKyThiCongRepository.findByCongTrinhIdOrderByNgayDesc(congTrinhId).stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<NhatKyThiCongResponse> layDanhSachTheoCongTrinh(Long congTrinhId, NguoiDung nguoiDung) {
+        if (nguoiDung.getVaiTro() == VaiTro.CHU_THAU) {
+            timCongTrinhCuaChuThau(congTrinhId, nguoiDung.getId());
+        } else {
+            boolean duocPhanCong = phanCongRepository.findByNguoiDungIdAndNgayKetThucIsNull(nguoiDung.getId()).stream()
+                    .anyMatch(p -> p.getCongTrinh().getId().equals(congTrinhId));
+            if (!duocPhanCong) {
+                throw new ResourceNotFoundException("Không tìm thấy công trình");
+            }
+        }
         return nhatKyThiCongRepository.findByCongTrinhIdOrderByNgayDesc(congTrinhId).stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
-    public NhatKyThiCongResponse update(Long id, NhatKyThiCongRequest request) {
-        NhatKyThiCong nhatKy = timNhatKy(id);
+    public NhatKyThiCongResponse update(Long id, NhatKyThiCongRequest request, Long chuThauId) {
+        NhatKyThiCong nhatKy = timNhatKyCuaChuThau(id, chuThauId);
         nhatKy.setNgay(request.getNgay() != null ? request.getNgay() : nhatKy.getNgay());
         nhatKy.setNoiDung(request.getNoiDung());
         nhatKy.setDanhSachAnh(ghiDanhSachAnh(request.getDanhSachAnh()));
@@ -63,20 +84,17 @@ public class NhatKyThiCongService {
         return toResponse(nhatKy);
     }
 
-    public void xoa(Long id) {
-        if (!nhatKyThiCongRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Không tìm thấy nhật ký thi công");
-        }
-        nhatKyThiCongRepository.deleteById(id);
+    public void xoa(Long id, Long chuThauId) {
+        nhatKyThiCongRepository.delete(timNhatKyCuaChuThau(id, chuThauId));
     }
 
-    private CongTrinh timCongTrinh(Long id) {
-        return congTrinhRepository.findById(id)
+    private CongTrinh timCongTrinhCuaChuThau(Long id, Long chuThauId) {
+        return congTrinhRepository.findByIdAndNguoiTaoId(id, chuThauId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy công trình"));
     }
 
-    private NhatKyThiCong timNhatKy(Long id) {
-        return nhatKyThiCongRepository.findById(id)
+    private NhatKyThiCong timNhatKyCuaChuThau(Long id, Long chuThauId) {
+        return nhatKyThiCongRepository.findByIdAndContractorId(id, chuThauId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy nhật ký thi công"));
     }
 

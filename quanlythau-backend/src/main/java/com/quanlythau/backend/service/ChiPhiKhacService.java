@@ -23,8 +23,8 @@ public class ChiPhiKhacService {
     private final ChiPhiKhacRepository chiPhiKhacRepository;
     private final CongTrinhRepository congTrinhRepository;
 
-    public ChiPhiKhacResponse create(Long congTrinhId, ChiPhiKhacRequest request) {
-        CongTrinh congTrinh = congTrinhRepository.findById(congTrinhId)
+    public ChiPhiKhacResponse create(Long congTrinhId, ChiPhiKhacRequest request, Long chuThauId) {
+        CongTrinh congTrinh = congTrinhRepository.findByIdAndNguoiTaoId(congTrinhId, chuThauId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy công trình"));
 
         ChiPhiKhac chiPhi = ChiPhiKhac.builder()
@@ -40,22 +40,26 @@ public class ChiPhiKhacService {
     }
 
     @Transactional(readOnly = true)
-    public List<ChiPhiKhacResponse> layDanhSachTheoCongTrinh(Long congTrinhId) {
+    public List<ChiPhiKhacResponse> layDanhSachTheoCongTrinh(Long congTrinhId, Long chuThauId) {
+        congTrinhRepository.findByIdAndNguoiTaoId(congTrinhId, chuThauId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy công trình"));
         return chiPhiKhacRepository.findByCongTrinhId(congTrinhId).stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
-    public BigDecimal tinhTongChiPhi(Long congTrinhId) {
+    public BigDecimal tinhTongChiPhi(Long congTrinhId, Long chuThauId) {
+        congTrinhRepository.findByIdAndNguoiTaoId(congTrinhId, chuThauId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy công trình"));
         return chiPhiKhacRepository.findByCongTrinhId(congTrinhId).stream()
                 .map(ChiPhiKhac::getSoTien)
                 .filter(t -> t != null)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    public ChiPhiKhacResponse update(Long id, ChiPhiKhacRequest request) {
-        ChiPhiKhac chiPhi = chiPhiKhacRepository.findById(id)
+    public ChiPhiKhacResponse update(Long id, ChiPhiKhacRequest request, Long chuThauId) {
+        ChiPhiKhac chiPhi = chiPhiKhacRepository.findByIdAndContractorId(id, chuThauId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy chi phí"));
         chiPhi.setLoaiChiPhi(request.getLoaiChiPhi());
         chiPhi.setSoTien(request.getSoTien());
@@ -65,11 +69,9 @@ public class ChiPhiKhacService {
         return toResponse(chiPhi);
     }
 
-    public void xoa(Long id) {
-        if (!chiPhiKhacRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Không tìm thấy chi phí");
-        }
-        chiPhiKhacRepository.deleteById(id);
+    public void xoa(Long id, Long chuThauId) {
+        chiPhiKhacRepository.delete(chiPhiKhacRepository.findByIdAndContractorId(id, chuThauId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy chi phí")));
     }
 
     private ChiPhiKhacResponse toResponse(ChiPhiKhac c) {

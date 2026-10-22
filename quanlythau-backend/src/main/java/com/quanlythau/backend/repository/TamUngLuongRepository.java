@@ -9,4 +9,9 @@ import java.util.List;
 public interface TamUngLuongRepository extends JpaRepository<TamUngLuong, Long> {
     List<TamUngLuong> findByNguoiDungIdAndNgayUngBetween(Long nguoiDungId, LocalDate tuNgay, LocalDate denNgay);
     List<TamUngLuong> findByNguoiDungIdOrderByNgayUngDesc(Long nguoiDungId);
+    List<TamUngLuong> findByNguoiDungIdAndChuThauIdAndNgayUngBetween(
+            Long nguoiDungId, Long chuThauId, LocalDate tuNgay, LocalDate denNgay
+    );
+    List<TamUngLuong> findByNguoiDungIdAndChuThauIdOrderByNgayUngDesc(Long nguoiDungId, Long chuThauId);
+    java.util.Optional<TamUngLuong> findByIdAndChuThauId(Long id, Long chuThauId);
 }

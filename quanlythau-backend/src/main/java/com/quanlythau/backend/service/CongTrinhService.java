@@ -9,6 +9,7 @@ import com.quanlythau.backend.entity.LoaiThongBao;
 import com.quanlythau.backend.entity.NguoiDung;
 import com.quanlythau.backend.entity.PhanCongCongTrinh;
 import com.quanlythau.backend.entity.TrangThaiCongTrinh;
+import com.quanlythau.backend.entity.VaiTro;
 import com.quanlythau.backend.exception.BadRequestException;
 import com.quanlythau.backend.exception.ResourceNotFoundException;
 import com.quanlythau.backend.repository.CongTrinhRepository;
@@ -30,6 +31,7 @@ public class CongTrinhService {
     private final NguoiDungRepository nguoiDungRepository;
     private final PhanCongCongTrinhRepository phanCongRepository;
     private final ThongBaoService thongBaoService;
+    private final NguoiDungService nguoiDungService;
 
     public CongTrinhResponse create(CongTrinhRequest request, Long nguoiTaoId) {
         CongTrinh congTrinh = CongTrinh.builder()
@@ -51,19 +53,28 @@ public class CongTrinhService {
     }
 
     @Transactional(readOnly = true)
-    public List<CongTrinhResponse> getAll() {
-        return congTrinhRepository.findAll().stream()
+    public List<CongTrinhResponse> getAll(Long nguoiDungId, VaiTro vaiTro) {
+        List<CongTrinh> congTrinhs = vaiTro == VaiTro.CHU_THAU
+                ? congTrinhRepository.findByNguoiTaoId(nguoiDungId)
+                : congTrinhRepository.findAssignedProjectsByWorkerId(nguoiDungId);
+        return congTrinhs.stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
-    public CongTrinhResponse getById(Long id) {
-        return toResponse(findCongTrinhOrThrow(id));
+    public CongTrinhResponse getById(Long id, NguoiDung nguoiDung) {
+        CongTrinh congTrinh = nguoiDung.getVaiTro() == VaiTro.CHU_THAU
+                ? findCongTrinhCuaChuThau(id, nguoiDung.getId())
+                : congTrinhRepository.findAssignedProjectsByWorkerId(nguoiDung.getId()).stream()
+                        .filter(c -> c.getId().equals(id))
+                        .findFirst()
+                        .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy công trình"));
+        return toResponse(congTrinh);
     }
 
-    public CongTrinhResponse update(Long id, CongTrinhRequest request) {
-        CongTrinh congTrinh = findCongTrinhOrThrow(id);
+    public CongTrinhResponse update(Long id, CongTrinhRequest request, Long chuThauId) {
+        CongTrinh congTrinh = findCongTrinhCuaChuThau(id, chuThauId);
         congTrinh.setTenCongTrinh(request.getTenCongTrinh());
         congTrinh.setDiaChi(request.getDiaChi());
         congTrinh.setTenChuNha(request.getTenChuNha());
@@ -77,12 +88,12 @@ public class CongTrinhService {
     }
 
     @Transactional
-    public void updateTrangThai(Long id, TrangThaiCongTrinh trangThai) {
+    public void updateTrangThai(Long id, TrangThaiCongTrinh trangThai, Long chuThauId) {
         if (trangThai == null) {
             throw new BadRequestException("Trang thai cong trinh khong duoc de trong");
         }
-        CongTrinh congTrinh = congTrinhRepository.findByIdForUpdate(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Khong tim thay cong trinh voi id: " + id));
+        CongTrinh congTrinh = congTrinhRepository.findByIdAndNguoiTaoIdForUpdate(id, chuThauId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy công trình"));
         boolean tamDungMoi = trangThai == TrangThaiCongTrinh.TAM_DUNG
                 && congTrinh.getTrangThai() != TrangThaiCongTrinh.TAM_DUNG;
         congTrinh.setTrangThai(trangThai);
@@ -100,26 +111,28 @@ public class CongTrinhService {
         }
     }
 
-    public void updateTienDo(Long id, Integer tienDoPhanTram) {
+    public void updateTienDo(Long id, Integer tienDoPhanTram, Long chuThauId) {
         if (tienDoPhanTram == null || tienDoPhanTram < 0 || tienDoPhanTram > 100) {
             throw new BadRequestException("Tien do phai trong khoang 0-100");
         }
-        CongTrinh congTrinh = findCongTrinhOrThrow(id);
+        CongTrinh congTrinh = findCongTrinhCuaChuThau(id, chuThauId);
         congTrinh.setTienDoPhanTram(tienDoPhanTram);
         congTrinhRepository.save(congTrinh);
     }
 
-    public void delete(Long id) {
-        CongTrinh congTrinh = findCongTrinhOrThrow(id);
+    public void delete(Long id, Long chuThauId) {
+        CongTrinh congTrinh = findCongTrinhCuaChuThau(id, chuThauId);
         congTrinhRepository.delete(congTrinh);
     }
 
     @Transactional
-    public PhanCongResponse ganTho(Long congTrinhId, PhanCongRequest request) {
+    public PhanCongResponse ganTho(Long congTrinhId, PhanCongRequest request, Long chuThauId) {
+        CongTrinh congTrinh = findCongTrinhCuaChuThau(congTrinhId, chuThauId);
         // Lock before other reads so concurrent assignments see the latest active assignment.
         NguoiDung nguoiDung = nguoiDungRepository.findByIdForUpdate(request.getNguoiDungId())
                 .orElseThrow(() -> new ResourceNotFoundException("Khong tim thay tho voi id: " + request.getNguoiDungId()));
-        CongTrinh congTrinh = findCongTrinhOrThrow(congTrinhId);
+
+        nguoiDungService.layHoacTaoQuanHe(chuThauId, nguoiDung, true);
 
         if (phanCongRepository.existsByCongTrinhIdAndNguoiDungIdAndNgayKetThucIsNull(congTrinhId, nguoiDung.getId())) {
             throw new BadRequestException("Tho nay da duoc phan cong vao cong trinh nay roi");
@@ -147,15 +160,28 @@ public class CongTrinhService {
     }
 
     @Transactional(readOnly = true)
-    public List<PhanCongResponse> getDanhSachTho(Long congTrinhId) {
-        findCongTrinhOrThrow(congTrinhId);
+    public List<PhanCongResponse> getDanhSachTho(Long congTrinhId, Long chuThauId) {
+        findCongTrinhCuaChuThau(congTrinhId, chuThauId);
         return phanCongRepository.findByCongTrinhIdAndNgayKetThucIsNull(congTrinhId).stream()
                 .map(this::toPhanCongResponse)
                 .collect(Collectors.toList());
     }
 
-    public void goPhanCong(Long congTrinhId, Long phanCongId) {
-        PhanCongCongTrinh phanCong = phanCongRepository.findById(phanCongId)
+    @Transactional(readOnly = true)
+    public List<PhanCongResponse> getDanhSachThoCuaTho(Long congTrinhId, Long thoId) {
+        boolean duocPhanCong = phanCongRepository.findByNguoiDungIdAndNgayKetThucIsNull(thoId).stream()
+                .anyMatch(phanCong -> phanCong.getCongTrinh().getId().equals(congTrinhId));
+        if (!duocPhanCong) {
+            throw new ResourceNotFoundException("Không tìm thấy công trình");
+        }
+        return phanCongRepository.findByCongTrinhIdAndNgayKetThucIsNull(congTrinhId).stream()
+                .map(this::toPhanCongResponse)
+                .collect(Collectors.toList());
+    }
+
+    public void goPhanCong(Long congTrinhId, Long phanCongId, Long chuThauId) {
+        findCongTrinhCuaChuThau(congTrinhId, chuThauId);
+        PhanCongCongTrinh phanCong = phanCongRepository.findByIdAndContractorId(phanCongId, chuThauId)
                 .orElseThrow(() -> new ResourceNotFoundException("Khong tim thay phan cong voi id: " + phanCongId));
         if (!phanCong.getCongTrinh().getId().equals(congTrinhId)) {
             throw new BadRequestException("Phan cong khong thuoc cong trinh nay");
@@ -174,6 +200,11 @@ public class CongTrinhService {
     private CongTrinh findCongTrinhOrThrow(Long id) {
         return congTrinhRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Khong tim thay cong trinh voi id: " + id));
+    }
+
+    private CongTrinh findCongTrinhCuaChuThau(Long id, Long chuThauId) {
+        return congTrinhRepository.findByIdAndNguoiTaoId(id, chuThauId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy công trình"));
     }
 
     private CongTrinhResponse toResponse(CongTrinh c) {

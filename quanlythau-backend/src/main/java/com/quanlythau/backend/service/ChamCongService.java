@@ -40,27 +40,27 @@ public class ChamCongService {
     private final ObjectMapper objectMapper;
     private final CaiDatService caiDatService;
     private final ThongBaoService thongBaoService;
+    private final NguoiDungService nguoiDungService;
 
     @Value("${cham-cong.nguong-khuon-mat}")
     private double nguongKhuonMat;
 
-    public ChamCongResponse chamCong(ChamCongRequest request) {
+    public ChamCongResponse chamCong(ChamCongRequest request, Long chuThauId) {
         LocalDate homNay = LocalDate.now();
 
+        CongTrinh congTrinh = congTrinhRepository.findByIdAndNguoiTaoId(request.getCongTrinhId(), chuThauId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy công trình"));
         NguoiDung tho = nguoiDungRepository.findById(request.getNguoiDungId())
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thợ"));
 
-        if (chamCongRepository.findByNguoiDungIdAndNgayChamCongAndCongTrinhId(tho.getId(), homNay, request.getCongTrinhId()).isPresent()) {
-            throw new BadRequestException(tho.getHoTen() + " đã chấm công tại công trình này hôm nay rồi");
-        }
-
-        CongTrinh congTrinh = congTrinhRepository.findById(request.getCongTrinhId())
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy công trình"));
-
-        boolean coPhanCong = phanCongRepository.findByNguoiDungIdAndNgayKetThucIsNull(tho.getId()).stream()
-                .anyMatch(pc -> pc.getCongTrinh().getId().equals(congTrinh.getId()));
+        boolean coPhanCong = phanCongRepository.existsByCongTrinhIdAndNguoiDungIdAndNgayKetThucIsNull(congTrinh.getId(), tho.getId());
         if (!coPhanCong) {
             throw new BadRequestException(tho.getHoTen() + " chưa được phân công vào công trình này");
+        }
+        nguoiDungService.kiemTraThuocDoiNgu(chuThauId, tho.getId());
+
+        if (chamCongRepository.findByNguoiDungIdAndNgayChamCongAndCongTrinhId(tho.getId(), homNay, request.getCongTrinhId()).isPresent()) {
+            throw new BadRequestException(tho.getHoTen() + " đã chấm công tại công trình này hôm nay rồi");
         }
 
         if (tho.getFaceDescriptor() == null) {
@@ -81,8 +81,8 @@ public class ChamCongService {
                 .ngayChamCong(homNay)
                 .loaiCong(request.getLoaiCong())
                 .coTangCa(coTangCa)
-                .donGiaApDung(tho.getDonGiaCong())
-                .phanTramTangCaApDung(coTangCa ? caiDatService.layCaiDat().getPhanTramTangCa() : null)
+                .donGiaApDung(nguoiDungService.layDonGiaCong(chuThauId, tho.getId()))
+                .phanTramTangCaApDung(coTangCa ? caiDatService.layCaiDat(chuThauId).getPhanTramTangCa() : null)
                 .gioCheckIn(LocalDateTime.now())
                 .anhChamCong(request.getAnhChamCong())
                 .khoangCachGuong(khoangCachGuong)
@@ -93,27 +93,28 @@ public class ChamCongService {
         chamCongRepository.save(chamCong);
 
         if (trangThai == TrangThaiXacThuc.CAN_DUYET) {
-            nguoiDungRepository.findByVaiTro(VaiTro.CHU_THAU).forEach(chuThau ->
-                    thongBaoService.tao(
-                            chuThau,
-                            LoaiThongBao.CHAM_CONG_CAN_DUYET,
+            nguoiDungRepository.findById(chuThauId).ifPresent(chuThau ->
+                    thongBaoService.tao(chuThau, LoaiThongBao.CHAM_CONG_CAN_DUYET,
                             "Có chấm công cần duyệt",
-                            tho.getHoTen() + " chấm công tại " + congTrinh.getTenCongTrinh() + " nhưng khuôn mặt không khớp đủ, cần bạn duyệt tay"
-                    )
-            );
+                            tho.getHoTen() + " chấm công tại " + congTrinh.getTenCongTrinh()
+                                    + " nhưng khuôn mặt không khớp đủ, cần bạn duyệt tay"));
         }
 
         return toResponse(chamCong);
     }
 
     @Transactional(readOnly = true)
-    public List<TrangThaiThoResponse> layTrangThaiTheoCongTrinh(Long congTrinhId) {
+    public List<TrangThaiThoResponse> layTrangThaiTheoCongTrinh(Long congTrinhId, Long chuThauId) {
+        congTrinhRepository.findByIdAndNguoiTaoId(congTrinhId, chuThauId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy công trình"));
         LocalDate homNay = LocalDate.now();
         return phanCongRepository.findByCongTrinhIdAndNgayKetThucIsNull(congTrinhId).stream()
                 .map(pc -> pc.getNguoiDung())
                 .distinct()
                 .map(tho -> {
-                    List<ChamCong> tatCaHomNay = chamCongRepository.findByNguoiDungIdAndNgayChamCong(tho.getId(), homNay);
+                    List<ChamCong> tatCaHomNay = chamCongRepository.findByNguoiDungIdAndNgayChamCong(tho.getId(), homNay).stream()
+                            .filter(c -> c.getCongTrinh().getNguoiTaoId().equals(chuThauId))
+                            .toList();
 
                     ChamCong taiDay = tatCaHomNay.stream()
                             .filter(c -> c.getCongTrinh().getId().equals(congTrinhId))
@@ -147,17 +148,17 @@ public class ChamCongService {
                 .collect(Collectors.toList());
     }
 
-    public ChamCongResponse chamCongThuCong(ChamCongThuCongRequest request) {
+    public ChamCongResponse chamCongThuCong(ChamCongThuCongRequest request, Long chuThauId) {
+        CongTrinh congTrinh = congTrinhRepository.findByIdAndNguoiTaoId(request.getCongTrinhId(), chuThauId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy công trình"));
         NguoiDung tho = nguoiDungRepository.findById(request.getNguoiDungId())
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thợ"));
-        CongTrinh congTrinh = congTrinhRepository.findById(request.getCongTrinhId())
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy công trình"));
 
-        boolean coPhanCong = phanCongRepository.findByNguoiDungId(tho.getId()).stream()
-                .anyMatch(pc -> pc.getCongTrinh().getId().equals(congTrinh.getId()));
+        boolean coPhanCong = phanCongRepository.existsByCongTrinhIdAndNguoiDungId(congTrinh.getId(), tho.getId());
         if (!coPhanCong) {
             throw new BadRequestException("Thợ này chưa từng được phân công vào công trình này");
         }
+        nguoiDungService.kiemTraThuocDoiNgu(chuThauId, tho.getId());
 
         ChamCong chamCong = chamCongRepository
                 .findByNguoiDungIdAndNgayChamCongAndCongTrinhId(tho.getId(), request.getNgayChamCong(), congTrinh.getId())
@@ -170,8 +171,8 @@ public class ChamCongService {
         chamCong.setLoaiCong(request.getLoaiCong());
         boolean coTangCa = Boolean.TRUE.equals(request.getCoTangCa());
         chamCong.setCoTangCa(coTangCa);
-        chamCong.setDonGiaApDung(tho.getDonGiaCong());
-        chamCong.setPhanTramTangCaApDung(coTangCa ? caiDatService.layCaiDat().getPhanTramTangCa() : null);
+        chamCong.setDonGiaApDung(nguoiDungService.layDonGiaCong(chuThauId, tho.getId()));
+        chamCong.setPhanTramTangCaApDung(coTangCa ? caiDatService.layCaiDat(chuThauId).getPhanTramTangCa() : null);
         chamCong.setGhiChu(request.getGhiChu());
         chamCong.setTrangThaiXacThuc(TrangThaiXacThuc.CHU_THAU_TAO);
         if (chamCong.getGioCheckIn() == null) {
@@ -182,8 +183,8 @@ public class ChamCongService {
         return toResponse(chamCong);
     }
 
-    public ChamCongResponse duyet(Long id, boolean dongY) {
-        ChamCong chamCong = chamCongRepository.findById(id)
+    public ChamCongResponse duyet(Long id, boolean dongY, Long chuThauId) {
+        ChamCong chamCong = chamCongRepository.findByIdAndContractorId(id, chuThauId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy bản ghi chấm công"));
         chamCong.setTrangThaiXacThuc(dongY ? TrangThaiXacThuc.TU_DONG_XAC_NHAN : TrangThaiXacThuc.TU_CHOI);
         chamCongRepository.save(chamCong);
@@ -200,35 +201,33 @@ public class ChamCongService {
         return toResponse(chamCong);
     }
 
-    public ChamCongResponse capNhatLoaiCong(Long id, LoaiCong loaiCong) {
-        ChamCong chamCong = chamCongRepository.findById(id)
+    public ChamCongResponse capNhatLoaiCong(Long id, LoaiCong loaiCong, Long chuThauId) {
+        ChamCong chamCong = chamCongRepository.findByIdAndContractorId(id, chuThauId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy bản ghi chấm công"));
         chamCong.setLoaiCong(loaiCong);
         chamCongRepository.save(chamCong);
         return toResponse(chamCong);
     }
 
-    public ChamCongResponse capNhatTangCa(Long id, boolean coTangCa) {
-        ChamCong chamCong = chamCongRepository.findById(id)
+    public ChamCongResponse capNhatTangCa(Long id, boolean coTangCa, Long chuThauId) {
+        ChamCong chamCong = chamCongRepository.findByIdAndContractorId(id, chuThauId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy bản ghi chấm công"));
         chamCong.setCoTangCa(coTangCa);
         if (coTangCa && chamCong.getPhanTramTangCaApDung() == null) {
-            chamCong.setPhanTramTangCaApDung(caiDatService.layCaiDat().getPhanTramTangCa());
+            chamCong.setPhanTramTangCaApDung(caiDatService.layCaiDat(chuThauId).getPhanTramTangCa());
         }
         chamCongRepository.save(chamCong);
         return toResponse(chamCong);
     }
 
-    public void xoa(Long id) {
-        if (!chamCongRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Không tìm thấy bản ghi chấm công");
-        }
-        chamCongRepository.deleteById(id);
+    public void xoa(Long id, Long chuThauId) {
+        chamCongRepository.delete(chamCongRepository.findByIdAndContractorId(id, chuThauId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy bản ghi chấm công")));
     }
 
     @Transactional(readOnly = true)
-    public List<ChamCongResponse> layDanhSach(Long congTrinhId, Long nguoiDungId, LocalDate ngay, TrangThaiXacThuc trangThai) {
-        return chamCongRepository.findAllByOrderByNgayChamCongDesc().stream()
+    public List<ChamCongResponse> layDanhSach(Long chuThauId, Long congTrinhId, Long nguoiDungId, LocalDate ngay, TrangThaiXacThuc trangThai) {
+        return chamCongRepository.findAllByContractorId(chuThauId).stream()
                 .filter(c -> congTrinhId == null || c.getCongTrinh().getId().equals(congTrinhId))
                 .filter(c -> nguoiDungId == null || c.getNguoiDung().getId().equals(nguoiDungId))
                 .filter(c -> ngay == null || c.getNgayChamCong().equals(ngay))
@@ -241,6 +240,7 @@ public class ChamCongService {
     public void luuKhuonMat(NguoiDung nguoiGoi, Long nguoiDungIdChiDinh, List<Double> descriptor) {
         NguoiDung doiTuong = nguoiGoi;
         if (nguoiGoi.getVaiTro() == VaiTro.CHU_THAU && nguoiDungIdChiDinh != null) {
+            nguoiDungService.kiemTraDangLamViec(nguoiGoi.getId(), nguoiDungIdChiDinh);
             doiTuong = nguoiDungRepository.findById(nguoiDungIdChiDinh)
                     .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thợ"));
         }

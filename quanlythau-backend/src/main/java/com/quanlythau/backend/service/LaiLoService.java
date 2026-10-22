@@ -27,8 +27,8 @@ public class LaiLoService {
     private final CaiDatService caiDatService;
 
     @Transactional(readOnly = true)
-    public LaiLoResponse tinhLaiLo(Long congTrinhId) {
-        CongTrinh congTrinh = congTrinhRepository.findById(congTrinhId)
+    public LaiLoResponse tinhLaiLo(Long congTrinhId, Long chuThauId) {
+        CongTrinh congTrinh = congTrinhRepository.findByIdAndNguoiTaoId(congTrinhId, chuThauId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy công trình"));
 
         BigDecimal chiPhiNhanCong = chamCongRepository.findByCongTrinhIdOrderByNgayChamCongDesc(congTrinhId).stream()
@@ -37,14 +37,14 @@ public class LaiLoService {
                 .map(TinhCongUtil::tongTien)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal chiPhiVatTu = vatTuService.tinhTongChiPhi(congTrinhId);
-        BigDecimal chiPhiKhac = chiPhiKhacService.tinhTongChiPhi(congTrinhId);
+        BigDecimal chiPhiVatTu = vatTuService.tinhTongChiPhi(congTrinhId, chuThauId);
+        BigDecimal chiPhiKhac = chiPhiKhacService.tinhTongChiPhi(congTrinhId, chuThauId);
         BigDecimal tongChiPhi = chiPhiNhanCong.add(chiPhiVatTu).add(chiPhiKhac);
 
         BigDecimal giaTriHopDong = congTrinh.getGiaTriHopDong();
         BigDecimal laiLoTamTinh = giaTriHopDong != null ? giaTriHopDong.subtract(tongChiPhi) : null;
 
-        Integer nguong = caiDatService.layCaiDat().getNguongCanhBaoChiPhi();
+        Integer nguong = caiDatService.layCaiDat(chuThauId).getNguongCanhBaoChiPhi();
         BigDecimal phanTramDaChi = null;
         boolean vuotNguong = false;
         if (giaTriHopDong != null && giaTriHopDong.compareTo(BigDecimal.ZERO) > 0) {
@@ -71,9 +71,9 @@ public class LaiLoService {
     }
 
     @Transactional(readOnly = true)
-    public List<LaiLoResponse> tinhLaiLoTatCa() {
-        return congTrinhRepository.findAll().stream()
-                .map(c -> tinhLaiLo(c.getId()))
+    public List<LaiLoResponse> tinhLaiLoTatCa(Long chuThauId) {
+        return congTrinhRepository.findByNguoiTaoId(chuThauId).stream()
+                .map(c -> tinhLaiLo(c.getId(), chuThauId))
                 .collect(Collectors.toList());
     }
 }

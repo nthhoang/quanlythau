@@ -38,14 +38,14 @@ public class ChamCongController {
 
     @PostMapping
     @PreAuthorize("hasRole('CHU_THAU')")
-    public ResponseEntity<ChamCongResponse> chamCong(@Valid @RequestBody ChamCongRequest request) {
-        return ResponseEntity.ok(chamCongService.chamCong(request));
+    public ResponseEntity<ChamCongResponse> chamCong(@Valid @RequestBody ChamCongRequest request, @AuthenticationPrincipal NguoiDung chuThau) {
+        return ResponseEntity.ok(chamCongService.chamCong(request, chuThau.getId()));
     }
 
     @GetMapping("/trang-thai-cong-trinh/{congTrinhId}")
     @PreAuthorize("hasRole('CHU_THAU')")
-    public ResponseEntity<List<TrangThaiThoResponse>> trangThaiTheoCongTrinh(@PathVariable Long congTrinhId) {
-        return ResponseEntity.ok(chamCongService.layTrangThaiTheoCongTrinh(congTrinhId));
+    public ResponseEntity<List<TrangThaiThoResponse>> trangThaiTheoCongTrinh(@PathVariable Long congTrinhId, @AuthenticationPrincipal NguoiDung chuThau) {
+        return ResponseEntity.ok(chamCongService.layTrangThaiTheoCongTrinh(congTrinhId, chuThau.getId()));
     }
 
     @GetMapping("/cua-toi")
@@ -56,8 +56,8 @@ public class ChamCongController {
 
     @PostMapping("/thu-cong")
     @PreAuthorize("hasRole('CHU_THAU')")
-    public ResponseEntity<ChamCongResponse> chamCongThuCong(@Valid @RequestBody ChamCongThuCongRequest request) {
-        return ResponseEntity.ok(chamCongService.chamCongThuCong(request));
+    public ResponseEntity<ChamCongResponse> chamCongThuCong(@Valid @RequestBody ChamCongThuCongRequest request, @AuthenticationPrincipal NguoiDung chuThau) {
+        return ResponseEntity.ok(chamCongService.chamCongThuCong(request, chuThau.getId()));
     }
 
     @GetMapping
@@ -66,35 +66,36 @@ public class ChamCongController {
             @RequestParam(required = false) Long congTrinhId,
             @RequestParam(required = false) Long nguoiDungId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate ngay,
-            @RequestParam(required = false) TrangThaiXacThuc trangThai
+            @RequestParam(required = false) TrangThaiXacThuc trangThai,
+            @AuthenticationPrincipal NguoiDung chuThau
     ) {
-        return ResponseEntity.ok(chamCongService.layDanhSach(congTrinhId, nguoiDungId, ngay, trangThai));
+        return ResponseEntity.ok(chamCongService.layDanhSach(chuThau.getId(), congTrinhId, nguoiDungId, ngay, trangThai));
     }
 
     @PatchMapping("/{id}/duyet")
     @PreAuthorize("hasRole('CHU_THAU')")
-    public ResponseEntity<ChamCongResponse> duyet(@PathVariable Long id, @RequestBody Map<String, Boolean> body) {
+    public ResponseEntity<ChamCongResponse> duyet(@PathVariable Long id, @RequestBody Map<String, Boolean> body, @AuthenticationPrincipal NguoiDung chuThau) {
         boolean dongY = Boolean.TRUE.equals(body.get("dongY"));
-        return ResponseEntity.ok(chamCongService.duyet(id, dongY));
+        return ResponseEntity.ok(chamCongService.duyet(id, dongY, chuThau.getId()));
     }
 
     @PatchMapping("/{id}/loai-cong")
     @PreAuthorize("hasRole('CHU_THAU')")
-    public ResponseEntity<ChamCongResponse> capNhatLoaiCong(@PathVariable Long id, @Valid @RequestBody LoaiCongUpdateRequest request) {
-        return ResponseEntity.ok(chamCongService.capNhatLoaiCong(id, request.getLoaiCong()));
+    public ResponseEntity<ChamCongResponse> capNhatLoaiCong(@PathVariable Long id, @Valid @RequestBody LoaiCongUpdateRequest request, @AuthenticationPrincipal NguoiDung chuThau) {
+        return ResponseEntity.ok(chamCongService.capNhatLoaiCong(id, request.getLoaiCong(), chuThau.getId()));
     }
 
     @PatchMapping("/{id}/tang-ca")
     @PreAuthorize("hasRole('CHU_THAU')")
-    public ResponseEntity<ChamCongResponse> capNhatTangCa(@PathVariable Long id, @RequestBody Map<String, Boolean> body) {
+    public ResponseEntity<ChamCongResponse> capNhatTangCa(@PathVariable Long id, @RequestBody Map<String, Boolean> body, @AuthenticationPrincipal NguoiDung chuThau) {
         boolean coTangCa = Boolean.TRUE.equals(body.get("coTangCa"));
-        return ResponseEntity.ok(chamCongService.capNhatTangCa(id, coTangCa));
+        return ResponseEntity.ok(chamCongService.capNhatTangCa(id, coTangCa, chuThau.getId()));
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('CHU_THAU')")
-    public ResponseEntity<Void> xoa(@PathVariable Long id) {
-        chamCongService.xoa(id);
+    public ResponseEntity<Void> xoa(@PathVariable Long id, @AuthenticationPrincipal NguoiDung chuThau) {
+        chamCongService.xoa(id, chuThau.getId());
         return ResponseEntity.noContent().build();
     }
 

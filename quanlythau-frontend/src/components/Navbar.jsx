@@ -68,6 +68,9 @@ export default function Navbar() {
               <NavLink to="/quan-ly-cham-cong" className={linkClass}>Quản lý chấm công</NavLink>
             )}
             {user.vaiTro === 'CHU_THAU' && (
+              <NavLink to="/quan-ly-tho" className={linkClass}>Quản lý thợ</NavLink>
+            )}
+            {user.vaiTro === 'CHU_THAU' && (
               <NavLink to="/quan-ly-luong" className={linkClass}>Quản lý lương</NavLink>
             )}
             {user.vaiTro === 'CHU_THAU' && (

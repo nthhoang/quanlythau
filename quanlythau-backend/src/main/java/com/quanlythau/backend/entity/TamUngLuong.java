@@ -39,6 +39,9 @@ public class TamUngLuong {
     @JoinColumn(name = "cong_trinh_id")
     private CongTrinh congTrinh;
 
+    @Column(name = "chu_thau_id")
+    private Long chuThauId;
+
     @Column(name = "so_tien", nullable = false, precision = 15, scale = 0)
     private BigDecimal soTien;
 
