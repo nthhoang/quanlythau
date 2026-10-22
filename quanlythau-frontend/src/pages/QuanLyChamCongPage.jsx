@@ -46,8 +46,8 @@ export default function QuanLyChamCongPage() {
 
   const taiDuLieuGoc = async () => {
     try {
-      const [tho, congTrinh] = await Promise.all([axiosClient.get('/nguoi-dung/tho'), axiosClient.get('/cong-trinh')]);
-      setDanhSachTho(tho.data);
+      const [tho, congTrinh] = await Promise.all([axiosClient.get('/nguoi-dung/tho/doi-ngu'), axiosClient.get('/cong-trinh')]);
+      setDanhSachTho(tho.data.filter((t) => t.active));
       setDanhSachCongTrinh(congTrinh.data);
     } catch {
       setLoi('Không tải được danh sách thợ/công trình');
@@ -108,7 +108,7 @@ export default function QuanLyChamCongPage() {
               <label className="block text-sm font-medium text-blueprint-900 mb-1">Thợ</label>
               <select required value={formThuCong.nguoiDungId} onChange={(e) => setFormThuCong({ ...formThuCong, nguoiDungId: e.target.value })}
                 className="w-full border border-concrete-200 rounded px-3 py-2 bg-white">
-                <option value="">-- chọn thợ --</option>
+                <option value="">{danhSachTho.length ? '-- chọn thợ --' : '-- không có thợ đang hoạt động --'}</option>
                 {danhSachTho.map((t) => <option key={t.id} value={t.id}>{t.hoTen}</option>)}
               </select>
             </div>
