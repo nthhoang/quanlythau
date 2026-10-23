@@ -12,10 +12,11 @@ export function taoKetNoiThongBao({ onNhanThongBao, onLoi }) {
   const token = localStorage.getItem('token');
   if (!token) return null;
 
-  const wsUrl = BACKEND_ORIGIN.replace(/^http/, 'ws') + '/ws';
+  const wsUrl = new URL('/ws', BACKEND_ORIGIN || window.location.origin);
+  wsUrl.protocol = wsUrl.protocol === 'https:' ? 'wss:' : 'ws:';
 
   const client = new Client({
-    brokerURL: wsUrl,
+    brokerURL: wsUrl.toString(),
     connectHeaders: { Authorization: `Bearer ${token}` },
     reconnectDelay: 5000,
     heartbeatIncoming: 10000,

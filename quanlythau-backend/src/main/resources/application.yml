@@ -32,7 +32,7 @@ cham-cong:
   nguong-khuon-mat: 0.6
 
 app:
-  upload-dir: uploads
+  upload-dir: ${UPLOAD_DIR:../uploads}
 
 # Gemini API dung cho OCR hoa don vat tu
 gemini:

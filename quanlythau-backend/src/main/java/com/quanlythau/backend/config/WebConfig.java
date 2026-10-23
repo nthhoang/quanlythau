@@ -5,6 +5,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.nio.file.Path;
+
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
@@ -13,12 +15,11 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        String duongDanChuanHoa = chuanHoaDuongDan(uploadDir);
+        String duongDanChuanHoa = Path.of(uploadDir).toAbsolutePath().normalize().toUri().toString();
+        if (!duongDanChuanHoa.endsWith("/")) {
+            duongDanChuanHoa += "/";
+        }
         registry.addResourceHandler("/uploads/**")
-                .addResourceLocations("file:" + duongDanChuanHoa + "/");
-    }
-
-    private String chuanHoaDuongDan(String dir) {
-        return dir.endsWith("/") ? dir.substring(0, dir.length() - 1) : dir;
+                .addResourceLocations(duongDanChuanHoa);
     }
 }

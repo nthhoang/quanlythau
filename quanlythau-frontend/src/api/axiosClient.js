@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-export const BACKEND_ORIGIN = 'http://localhost:8081';
+export const BACKEND_ORIGIN = import.meta.env.VITE_BACKEND_ORIGIN || '';
 const axiosClient = axios.create({
   baseURL: `${BACKEND_ORIGIN}/api`,
 });
