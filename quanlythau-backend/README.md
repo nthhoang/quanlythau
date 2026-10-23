@@ -22,7 +22,7 @@ Chỉ dùng với dữ liệu giả. Quick Tunnel tạo URL HTTPS công khai ng�
 
 Thực hiện các lệnh từ thư mục gốc của repository. Đảm bảo MySQL đang chạy, file `.env` ở thư mục gốc đã có các biến cấu hình cần thiết, và backend dùng một cơ sở dữ liệu demo riêng. Không đưa cổng MySQL ra Internet.
 
-1. Khởi động backend trong terminal thứ nhất. Mặc định ảnh được lưu ở thư mục `uploads` tại gốc repository, dùng chung cho các cách chạy từ VS Code và terminal. Có thể đặt `UPLOAD_DIR` trong `.env` để chỉ định một thư mục lưu ảnh khác:
+1. Khởi động backend trong terminal thứ nhất. Thư mục làm việc phải là `quanlythau-backend` để mặc định `../uploads` trỏ về thư mục `uploads` ở gốc repository, dùng chung với các ảnh hiện có. Có thể đặt `UPLOAD_DIR` trong `.env` để chỉ định một thư mục lưu ảnh khác:
 
    ```bash
    cd quanlythau-backend
