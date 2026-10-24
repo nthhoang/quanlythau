@@ -83,6 +83,7 @@ class NguoiDungServiceTest {
         assertEquals(1, team.size());
         assertEquals("Nguyễn Văn A", team.get(0).getHoTen());
         assertTrue(team.get(0).getDangLamViec());
+        assertEquals(LocalDate.now().minusDays(2), team.get(0).getNgayThamGia());
         assertEquals(List.of("Nhà phố"), team.get(0).getCongTrinhDangLamViec());
     }
 
@@ -113,6 +114,7 @@ class NguoiDungServiceTest {
         ArgumentCaptor<NguoiDung> workerCaptor = ArgumentCaptor.forClass(NguoiDung.class);
         verify(nguoiDungRepository).save(workerCaptor.capture());
         assertEquals("tho_minh", response.getTenDangNhap());
+        assertEquals(LocalDate.now(), response.getNgayThamGia());
         assertEquals("encoded-password", workerCaptor.getValue().getMatKhau());
         assertEquals(1L, workerCaptor.getValue().getChuThauId());
         verify(quanHeRepository).save(any(QuanHeThoChuThau.class));

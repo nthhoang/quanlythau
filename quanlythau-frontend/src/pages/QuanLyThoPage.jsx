@@ -19,6 +19,41 @@ const formatVND = (value) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
 };
 
+const formatNgayThamGia = (ngayThamGia) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(ngayThamGia || '')) return null;
+  const [year, month, day] = ngayThamGia.split('-').map(Number);
+  const ngayBatDau = new Date(year, month - 1, day);
+  const homNay = new Date();
+  homNay.setHours(0, 0, 0, 0);
+  if (Number.isNaN(ngayBatDau.getTime()) || ngayBatDau > homNay) return null;
+
+  let soThang = (homNay.getFullYear() - year) * 12 + homNay.getMonth() - (month - 1);
+  let mocThoiGian;
+  do {
+    const thangTichLuy = year * 12 + month - 1 + soThang;
+    const namMoc = Math.floor(thangTichLuy / 12);
+    const thangMoc = thangTichLuy % 12;
+    const ngayMoc = Math.min(day, new Date(namMoc, thangMoc + 1, 0).getDate());
+    mocThoiGian = new Date(namMoc, thangMoc, ngayMoc);
+    if (mocThoiGian > homNay) soThang -= 1;
+  } while (mocThoiGian > homNay);
+
+  const soNgay = Math.floor((
+    Date.UTC(homNay.getFullYear(), homNay.getMonth(), homNay.getDate())
+    - Date.UTC(mocThoiGian.getFullYear(), mocThoiGian.getMonth(), mocThoiGian.getDate())
+  ) / 86400000);
+  const nam = Math.floor(soThang / 12);
+  const thang = soThang % 12;
+  const cacPhan = [];
+  if (nam) cacPhan.push(`${nam} năm`);
+  if (thang) cacPhan.push(`${thang} tháng`);
+  if (soNgay || cacPhan.length === 0) cacPhan.push(`${soNgay} ngày`);
+  return {
+    ngay: new Intl.DateTimeFormat('vi-VN').format(ngayBatDau),
+    thoiGian: cacPhan.join(' '),
+  };
+};
+
 export default function QuanLyThoPage() {
   const [danhSachTho, setDanhSachTho] = useState([]);
   const [dangTai, setDangTai] = useState(true);
@@ -257,10 +292,11 @@ export default function QuanLyThoPage() {
         ) : (
           <div className="overflow-hidden rounded-xl border border-concrete-200 bg-white">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[760px] text-left text-sm">
+              <table className="w-full min-w-[900px] text-left text-sm">
                 <thead className="bg-blueprint-100/60 text-xs uppercase tracking-wide text-blueprint-900/60">
                   <tr>
                     <th className="px-4 py-3">Thợ</th>
+                    <th className="px-4 py-3">Thời gian tham gia</th>
                     <th className="px-4 py-3">Công trình đang làm</th>
                     <th className="px-4 py-3">Đơn giá công/ngày</th>
                     <th className="px-4 py-3">Trạng thái</th>
@@ -275,6 +311,17 @@ export default function QuanLyThoPage() {
                         <p className="mt-1 text-xs text-blueprint-900/55">Tài khoản: {tho.tenDangNhap}</p>
                         <p className="mt-1 text-xs text-blueprint-900/55">{CHUYEN_MON_LABEL[tho.chuyenMon] || 'Chưa cập nhật chuyên môn'}</p>
                         {tho.soDienThoai && <p className="mt-1 text-xs text-blueprint-900/55">{tho.soDienThoai}</p>}
+                      </td>
+                      <td className="px-4 py-4">
+                        {(() => {
+                          const thoiGian = formatNgayThamGia(tho.ngayThamGia);
+                          return thoiGian ? (
+                            <>
+                              <p className="font-semibold text-blueprint-900">{thoiGian.thoiGian}</p>
+                              <p className="mt-1 text-xs text-blueprint-900/55">Từ {thoiGian.ngay}</p>
+                            </>
+                          ) : <span className="text-blueprint-900/45">Chưa có dữ liệu</span>;
+                        })()}
                       </td>
                       <td className="px-4 py-4">
                         {tho.congTrinhDangLamViec?.length

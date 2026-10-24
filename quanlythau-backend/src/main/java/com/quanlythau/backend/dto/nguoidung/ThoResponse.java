@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 @Getter
@@ -22,6 +23,7 @@ public class ThoResponse {
     private String soDienThoai;
     private ChuyenMon chuyenMon;
     private BigDecimal donGiaCong;
+    private LocalDate ngayThamGia;
     private Boolean dangLamViec;
     private Boolean active;
     private List<String> congTrinhDangLamViec;

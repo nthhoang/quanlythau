@@ -55,13 +55,14 @@ public class NguoiDungService {
                 .chuThauId(chuThauId)
                 .active(true)
                 .build());
+        LocalDate ngayThamGia = LocalDate.now();
         quanHeRepository.save(QuanHeThoChuThau.builder()
                 .chuThauId(chuThauId)
                 .tho(tho)
                 .donGiaCong(request.getDonGiaCong())
-                .ngayBatDau(LocalDate.now())
+                .ngayBatDau(ngayThamGia)
                 .build());
-        return toThoResponse(tho, List.of(), request.getDonGiaCong(), true);
+        return toThoResponse(tho, List.of(), request.getDonGiaCong(), true, ngayThamGia);
     }
 
     @Transactional(readOnly = true)
@@ -96,7 +97,7 @@ public class NguoiDungService {
                     boolean dangLamViec = Boolean.TRUE.equals(tho.getActive()) && q != null && q.getNgayKetThuc() == null;
                     return toThoResponse(tho, projects, q != null && q.getDonGiaCong() != null
                             ? q.getDonGiaCong()
-                            : tho.getDonGiaCong(), dangLamViec);
+                            : tho.getDonGiaCong(), dangLamViec, q != null ? q.getNgayBatDau() : null);
                 })
                 .toList();
     }
@@ -119,7 +120,7 @@ public class NguoiDungService {
                 .stream()
                 .map(phanCong -> phanCong.getCongTrinh().getTenCongTrinh())
                 .toList();
-        return toThoResponse(tho, congTrinhDangLamViec, quanHe.getDonGiaCong(), true);
+        return toThoResponse(tho, congTrinhDangLamViec, quanHe.getDonGiaCong(), true, quanHe.getNgayBatDau());
     }
 
     @Transactional
@@ -165,6 +166,16 @@ public class NguoiDungService {
             java.math.BigDecimal donGiaCong,
             boolean dangLamViec
     ) {
+        return toThoResponse(nguoiDung, congTrinhDangLamViec, donGiaCong, dangLamViec, null);
+    }
+
+    private ThoResponse toThoResponse(
+            NguoiDung nguoiDung,
+            List<String> congTrinhDangLamViec,
+            java.math.BigDecimal donGiaCong,
+            boolean dangLamViec,
+            LocalDate ngayThamGia
+    ) {
         return ThoResponse.builder()
                 .id(nguoiDung.getId())
                 .tenDangNhap(nguoiDung.getTenDangNhap())
@@ -172,6 +183,7 @@ public class NguoiDungService {
                 .soDienThoai(nguoiDung.getSoDienThoai())
                 .chuyenMon(nguoiDung.getChuyenMon())
                 .donGiaCong(donGiaCong)
+                .ngayThamGia(ngayThamGia)
                 .dangLamViec(dangLamViec)
                 .active(nguoiDung.getActive())
                 .congTrinhDangLamViec(congTrinhDangLamViec)
